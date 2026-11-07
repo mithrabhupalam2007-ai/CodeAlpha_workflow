@@ -1,0 +1,22 @@
+{
+  "name": "workflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WorkFlow — full-stack project management app (React + Vite, Express, MongoDB, Socket.IO, Tailwind CSS)",
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,indigo \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "test:auth": "node scripts/auth-smoke.mjs",
+    "test:projects": "node scripts/project-smoke.mjs",
+    "test:tasks": "node scripts/task-smoke.mjs",
+    "test:board": "node scripts/board-smoke.mjs",
+    "build": "npm run build --prefix frontend",
+    "start": "npm start --prefix backend"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}

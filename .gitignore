@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment (never commit secrets — use .env.example as the template)
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Testing / coverage
+coverage/

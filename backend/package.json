@@ -1,0 +1,37 @@
+{
+  "name": "workflow-backend",
+  "version": "1.0.0",
+  "description": "WorkFlow API - backend for the WorkFlow project management app (Express + MongoDB + Socket.IO)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/scripts/seed.js"
+  },
+  "keywords": [
+    "workflow",
+    "project-management",
+    "express",
+    "mongodb",
+    "socket.io"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.4",
+    "morgan": "^1.12.1",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.3.1",
+    "socket.io": "^4.8.4"
+  }
+}
