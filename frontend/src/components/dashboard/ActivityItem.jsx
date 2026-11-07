@@ -19,6 +19,8 @@ const TYPE_STYLES = {
   "task.completed": { Icon: CheckCircle2, box: "bg-emerald-50 text-emerald-600" },
   "comment.added": { Icon: MessageSquare, box: "bg-rose-50 text-rose-600" },
   "member.joined": { Icon: Users, box: "bg-sky-50 text-sky-600" },
+  "member.removed": { Icon: Users, box: "bg-rose-50 text-rose-600" },
+  "invitation-accepted": { Icon: Users, box: "bg-sky-50 text-sky-600" },
 };
 
 /** Single activity-feed row — shared by the dashboard card and the bell menu. */

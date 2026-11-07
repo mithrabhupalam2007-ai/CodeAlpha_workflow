@@ -757,6 +757,7 @@ const addSubtask = async (req, res, next) => {
     );
 
     const out = await reload(task._id, userId);
+    events.taskUpdated(task.project._id, out, userId);
     return res.status(201).json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -792,6 +793,7 @@ const updateSubtask = async (req, res, next) => {
     );
 
     const out = await reload(task._id, userId);
+    events.taskUpdated(task.project._id, out, userId);
     return res.json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -818,6 +820,7 @@ const removeSubtask = async (req, res, next) => {
     );
 
     const out = await reload(task._id, userId);
+    events.taskUpdated(task.project._id, out, userId);
     return res.json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -880,6 +883,7 @@ const addAttachment = async (req, res, next) => {
     });
 
     const out = await reload(task._id, userId);
+    events.taskUpdated(task.project._id, out, userId);
     return res.status(201).json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -945,6 +949,7 @@ const uploadAttachment = async (req, res, next) => {
     });
 
     const out = await reload(task._id, userId);
+    events.taskUpdated(task.project._id, out, userId);
     return res.status(201).json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -984,6 +989,7 @@ const removeAttachment = async (req, res, next) => {
     });
 
     const out = await reload(task._id, userId);
+    events.taskUpdated(task.project._id, out, userId);
     return res.json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -1087,6 +1093,18 @@ const addComment = async (req, res, next) => {
     });
 
     const out = await reload(task._id, userId);
+    const newComment = (out.comments || []).slice(-1)[0];
+    events.taskCommented(task.project._id, out, newComment?._id, userId);
+    if (task.assignee && String(idOf(task.assignee)) !== String(userId)) {
+      events.notifyUser(task.assignee, {
+        actorId: userId,
+        actorName: req.user.name,
+        type: "comment.added",
+        message: `commented on “${task.title}”`,
+        projectId: task.project._id,
+        taskId: task._id,
+      });
+    }
     return res.status(201).json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -1131,6 +1149,7 @@ const editComment = async (req, res, next) => {
     });
 
     const out = await reload(task._id, userId);
+    events.taskCommented(task.project._id, out, req.params.commentId, userId);
     return res.json({ success: true, task: out });
   } catch (error) {
     return next(error);
@@ -1183,6 +1202,7 @@ const removeComment = async (req, res, next) => {
     });
 
     const out = await reload(task._id, userId);
+    events.taskCommented(task.project._id, out, req.params.commentId, userId);
     return res.json({ success: true, task: out });
   } catch (error) {
     return next(error);

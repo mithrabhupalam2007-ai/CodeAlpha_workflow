@@ -35,6 +35,7 @@ import {
   canUpdateTaskProgress,
 } from "../../utils/permissions.js";
 import { cn } from "../../utils/cn.js";
+import { useSocket } from "../../context/SocketContext.jsx";
 
 const SELECT_CLASS =
   "w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition-all focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10";
@@ -83,6 +84,37 @@ export default function TaskDetailModal({
     setFile(null);
     setActivityKey((prev) => prev + 1);
   }, [open, task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!open || !task?.id || !socket) return;
+
+    const onUpdateOrComment = ({ taskId }) => {
+      if (taskId === task.id) {
+        onChanged?.();
+        setActivityKey((k) => k + 1);
+      }
+    };
+
+    const onDeleted = ({ taskId }) => {
+      if (taskId === task.id) {
+        onClose?.();
+      }
+    };
+
+    socket.on("task:updated", onUpdateOrComment);
+    socket.on("task:moved", onUpdateOrComment);
+    socket.on("task:commented", onUpdateOrComment);
+    socket.on("task:deleted", onDeleted);
+
+    return () => {
+      socket.off("task:updated", onUpdateOrComment);
+      socket.off("task:moved", onUpdateOrComment);
+      socket.off("task:commented", onUpdateOrComment);
+      socket.off("task:deleted", onDeleted);
+    };
+  }, [open, task?.id, socket, onChanged, onClose]);
 
   const members = useMemo(() => {
     if (!task?.project?.id) return [];

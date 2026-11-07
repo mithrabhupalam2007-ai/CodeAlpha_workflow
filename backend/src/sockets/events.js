@@ -39,15 +39,17 @@ const emitToRoom = (room, event, payload) => {
 };
 
 const emitToUser = (userId, event, payload) => {
-  if (!userId) return false;
-  return emitToRoom(userRoom(String(userId)), event, payload);
+  const targetId = idOf(userId);
+  if (!targetId) return false;
+  return emitToRoom(userRoom(targetId), event, payload);
 };
 
 /** Server-side room management (used to kick removed members). */
 const kickUserFromProject = (userId, projectId) => {
   const s = io();
-  if (!s || !userId || !projectId) return;
-  s.in(userRoom(String(userId))).socketsLeave(projectRoom(projectId));
+  const targetId = idOf(userId);
+  if (!s || !targetId || !projectId) return;
+  s.in(userRoom(targetId)).socketsLeave(projectRoom(projectId));
 };
 
 // ---------- domain broadcasts (call AFTER persisting) ----------
@@ -151,8 +153,8 @@ const notifyUser = async (userId, fields) => {
 
     // Shape mirrors GET /api/dashboard/activity entries so the bell can
     // prepend it without refetching.
-    emitToUser(userId, "notification:new", {
-      id: entry._id,
+    emitToUser(recipient, "notification:new", {
+      id: String(entry._id),
       type: entry.type,
       message: entry.message,
       actor: { id: actorId, name: fields.actorName ?? null },

@@ -20,6 +20,7 @@ import { deleteTask, setTaskStatus } from "../api/tasks.js";
 import { getProjects } from "../api/projects.js";
 import { useTasks } from "../hooks/useTasks.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useProjectRoom, useSocket } from "../context/SocketContext.jsx";
 
 const EMPTY_FILTERS = {
   q: "",
@@ -97,6 +98,41 @@ export default function Tasks() {
       setSelectedId(null);
     }
   }, [selectedId, tasks]);
+
+  // Subscribe to project rooms for real-time updates
+  const roomIds = useMemo(() => {
+    if (filters.projectId) return [filters.projectId];
+    return (projects || []).filter((p) => p.status !== "archived").map((p) => p.id);
+  }, [filters.projectId, projects]);
+  useProjectRoom(roomIds);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onSync = () => refetch(false);
+
+    const onDeleted = ({ taskId }) => {
+      if (selectedId === taskId) setSelectedId(null);
+      if (deleteTarget?.id === taskId) setDeleteTarget(null);
+      refetch(false);
+    };
+
+    socket.on("task:created", onSync);
+    socket.on("task:updated", onSync);
+    socket.on("task:moved", onSync);
+    socket.on("task:deleted", onDeleted);
+    socket.on("task:commented", onSync);
+
+    return () => {
+      socket.off("task:created", onSync);
+      socket.off("task:updated", onSync);
+      socket.off("task:moved", onSync);
+      socket.off("task:deleted", onDeleted);
+      socket.off("task:commented", onSync);
+    };
+  }, [socket, refetch, selectedId, deleteTarget]);
 
   const selected = useMemo(
     () => (selectedId ? (tasks || []).find((t) => t.id === selectedId) ?? null : null),

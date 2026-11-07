@@ -5,27 +5,30 @@ import ActivityItem from "../dashboard/ActivityItem.jsx";
 import Skeleton from "../ui/Skeleton.jsx";
 import { getActivity } from "../../api/dashboard.js";
 import { useClickOutside } from "../../hooks/useClickOutside.js";
+import { useSocket } from "../../context/SocketContext.jsx";
 import { isSameLocalDay } from "../../utils/dates.js";
+import { cn } from "../../utils/cn.js";
 
 /**
- * Bell dropdown fed by GET /api/dashboard/activity.
- * Badge = number of entries that happened today.
+ * Bell dropdown fed by GET /api/dashboard/activity and live Socket.IO events.
+ * Badge = number of unseen entries that happened today.
  */
 export default function NotificationsMenu() {
+  const { socket } = useSocket();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState(null); // null = not loaded yet
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [seenAt, setSeenAt] = useState(null);
+  const [hasNewAlert, setHasNewAlert] = useState(false);
   const rootRef = useRef(null);
 
   const close = useCallback(() => setOpen(false), []);
   useClickOutside(rootRef, close, open);
 
-  // Load the feed when the menu first opens (retry bumps reloadKey).
+  // Load feed on mount and on reloadKey changes so badge is accurate right away
   useEffect(() => {
-    if (!open) return undefined;
-
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -44,17 +47,51 @@ export default function NotificationsMenu() {
     return () => {
       cancelled = true;
     };
-  }, [open, reloadKey]);
+  }, [reloadKey]);
 
-  const todayCount = (entries || []).filter((entry) =>
-    isSameLocalDay(entry.createdAt)
+  // Real-time notifications from Socket.IO user room
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewNotification = (notification) => {
+      setEntries((prev) => {
+        const current = prev || [];
+        if (current.some((e) => e.id === notification.id)) return current;
+        return [notification, ...current];
+      });
+      setHasNewAlert(true);
+    };
+
+    socket.on("notification:new", onNewNotification);
+
+    return () => {
+      socket.off("notification:new", onNewNotification);
+    };
+  }, [socket]);
+
+  const handleOpenToggle = () => {
+    setOpen((value) => {
+      if (!value) setHasNewAlert(false);
+      return !value;
+    });
+  };
+
+  const handleMarkSeen = () => {
+    setSeenAt(new Date().toISOString());
+    close();
+  };
+
+  const todayCount = (entries || []).filter(
+    (entry) =>
+      isSameLocalDay(entry.createdAt) &&
+      (!seenAt || new Date(entry.createdAt) > new Date(seenAt))
   ).length;
 
   return (
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={handleOpenToggle}
         aria-label={
           todayCount > 0
             ? `Notifications, ${todayCount} new today`
@@ -64,9 +101,9 @@ export default function NotificationsMenu() {
         aria-haspopup="menu"
         className="relative rounded-xl p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={cn("h-5 w-5 transition-colors", hasNewAlert && "text-brand-600 animate-pulse")} />
         {todayCount > 0 ? (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-white animate-fade-in">
             {todayCount > 9 ? "9+" : todayCount}
           </span>
         ) : null}
@@ -147,7 +184,7 @@ export default function NotificationsMenu() {
           <footer className="border-t border-slate-100 px-4 py-2.5">
             <button
               type="button"
-              onClick={close}
+              onClick={handleMarkSeen}
               className="inline-flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
             >
               <CheckCheck className="h-3.5 w-3.5" />

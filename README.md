@@ -340,9 +340,24 @@ Every meaningful change is recorded (newest first): `task-created`, `task-update
 ```bash
 npm run test:board                               # direct → :4000/api
 API_URL=http://localhost:5173 npm run test:board # through the Vite proxy
+npm run test:realtime                            # live Socket.IO collaboration suite
 ```
 
 75 checks cover the board + collaboration modules: kanban ordering and cross-column moves, threaded comments (reply nesting, author-only edit, parent delete cascade), multipart uploads (`/uploads` static fetch, viewer 403, assignee allowed, disallowed type → 400, > 8 MB → 400, unlink-on-delete), the full activity record set, non-member 404s, archived 409s, and CSRF enforcement. All green.
+
+## Real-Time Collaboration (Socket.IO)
+
+Every board card mutation, comment thread update, assignment, and membership change synchronizes live between connected clients without requiring manual page refreshes.
+
+- **Private User Room (`user:<userId>`)**: Automatically joined upon handshake authentication. Emits `notification:new` directly to recipients, driving the topbar bell badge and dropdown activity feed in real time.
+- **Authorized Project Rooms (`project:<projectId>`)**: Joined via `room:join` with database role checks. Non-members are refused. Emits:
+  - `task:created` — adds new cards to connected boards and lists
+  - `task:updated` — synchronizes field edits, subtasks, and attachments
+  - `task:moved` — updates column placement and positions on boards
+  - `task:commented` — updates discussions and counters inside open modal dialogs
+  - `task:deleted` — removes cards and closes open modals
+  - `project:members` — syncs role changes and member additions/removals live
+- **Frontend Integration**: Managed via `SocketContext` and the `useProjectRoom(ids)` hook. Automatically joins/leaves project rooms, reconnects seamlessly across network drops, and maintains optimistic drag-and-drop state.
 
 ```bash
 cd backend && npm run seed -- --reset            # demo data for all suites
@@ -431,7 +446,8 @@ Tokens live in `frontend/src/styles/index.css` under Tailwind v4’s `@theme` �
 - [x] Phase 5 — task management: full task fields (dates, labels, subtasks, attachments), CRUD, search/filter/sort, role + assignee permissions
 - [x] Phase 6 — Kanban board: drag-and-drop ordering, cross-column moves, viewer/editor/assignee move rules
 - [x] Phase 7 — task collaboration: threaded comments, edit/delete own comments, avatars + timestamps, file uploads, activity history (created/updated, status changes, assignments)
-- [ ] Phase 8 — realtime collaboration via Socket.IO rooms, global search, settings, deployment
+- [x] Phase 8 — realtime collaboration via Socket.IO rooms (board sync, comments, member changes, live notification bell)
+- [ ] Phase 9 — global search, profile settings, cloud storage deployment
 
 ## License
 

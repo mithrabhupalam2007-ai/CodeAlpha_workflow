@@ -27,6 +27,7 @@ import { PROJECT_STATUS, projectColor } from "../utils/projectColors.js";
 import { formatDate, relativeTime } from "../utils/dates.js";
 import { ROLE_LABELS, canManageSettings } from "../utils/permissions.js";
 import { cn } from "../utils/cn.js";
+import { useProjectRoom, useSocket } from "../context/SocketContext.jsx";
 
 /**
  * Project detail: overview + progress, member management (roles, removal),
@@ -68,6 +69,29 @@ export default function ProjectDetail() {
   useEffect(() => {
     fetchProject();
   }, [fetchProject]);
+
+  // Join project room for realtime member updates
+  useProjectRoom(id);
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket || !id) return;
+
+    const onMembersChange = (payload) => {
+      if (String(payload.projectId) !== String(id)) return;
+      if (payload.action === "removed" && String(payload.userId) === String(user?.id)) {
+        navigate("/projects", { replace: true });
+        return;
+      }
+      fetchProject();
+    };
+
+    socket.on("project:members", onMembersChange);
+
+    return () => {
+      socket.off("project:members", onMembersChange);
+    };
+  }, [socket, id, user?.id, fetchProject, navigate]);
 
   const runAction = async (fn) => {
     setActionError(null);

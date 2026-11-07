@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const Invitation = require("../models/Invitation");
 const Project = require("../models/Project");
+const events = require("../sockets/events");
 const { sendEmail } = require("../utils/sendEmail");
 const {
   getProjectRole,
@@ -304,6 +305,17 @@ const respondInvitation = (action) => async (req, res, next) => {
       { _id: invitation._id },
       { $set: { status: "accepted", respondedAt: new Date() } }
     );
+
+    events.projectMembers(invitation.project._id, "joined", req.user.id, req.user.id);
+    if (invitation.invitedBy && String(invitation.invitedBy) !== String(req.user.id)) {
+      events.notifyUser(invitation.invitedBy, {
+        actorId: req.user.id,
+        actorName: req.user.name,
+        type: "member.joined",
+        message: `accepted your invitation to “${invitation.project.name}”`,
+        projectId: invitation.project._id,
+      });
+    }
 
     return res.json({
       success: true,

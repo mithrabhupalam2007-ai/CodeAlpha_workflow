@@ -12,6 +12,7 @@
     "test:projects": "node scripts/project-smoke.mjs",
     "test:tasks": "node scripts/task-smoke.mjs",
     "test:board": "node scripts/board-smoke.mjs",
+    "test:realtime": "node scripts/realtime-smoke.mjs",
     "build": "npm run build --prefix frontend",
     "start": "npm start --prefix backend"
   },

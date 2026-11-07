@@ -70,5 +70,5 @@ const activitySchema = new mongoose.Schema(
 
 activitySchema.index({ task: 1, createdAt: -1 });
 
-module.exports = mongoose.model("Activity", activitySchema);
+module.exports = mongoose.model("TaskActivity", activitySchema);
 module.exports.ACTIVITY_TYPES = ACTIVITY_TYPES;

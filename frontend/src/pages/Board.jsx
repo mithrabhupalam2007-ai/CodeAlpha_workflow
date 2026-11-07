@@ -25,6 +25,7 @@ import { deleteTask, moveTask } from "../api/tasks.js";
 import { getProjects } from "../api/projects.js";
 import { useTasks } from "../hooks/useTasks.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useProjectRoom, useSocket } from "../context/SocketContext.jsx";
 
 const COLUMNS = ["todo", "in-progress", "in-review", "done"];
 
@@ -72,12 +73,12 @@ export default function Board() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const { tasks, loading, error, refetch } = useTasks({
+  const { tasks, setTasks, loading, error, refetch } = useTasks({
     ...filters,
     sort: "position",
     order: "asc",
   });
-  const list = tasks ?? [];
+  const list = board ?? tasks ?? [];
 
   const boardRef = useRef(null);
   useEffect(() => {
@@ -85,9 +86,90 @@ export default function Board() {
     setBoard(tasks);
   }, [tasks]);
 
+  const activeTaskRef = useRef(activeTask);
+  useEffect(() => {
+    activeTaskRef.current = activeTask;
+  }, [activeTask]);
+
   const suppressClick = useRef(false);
   const dragSnapshot = useRef(null); // board layout when the drag started
   const dragMoved = useRef(false); // a cross-column beat happened during dragOver
+
+  // Subscribe to project rooms for real-time updates
+  const roomIds = useMemo(() => {
+    if (filters.projectId) return [filters.projectId];
+    return (projects || []).filter((p) => p.status !== "archived").map((p) => p.id);
+  }, [filters.projectId, projects]);
+  useProjectRoom(roomIds);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onTaskCreated = ({ projectId }) => {
+      if (filters.projectId && filters.projectId !== projectId) return;
+      refetch(false);
+    };
+
+    const onTaskUpdated = ({ taskId, task: updated }) => {
+      if (activeTaskRef.current?.id === taskId) return;
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const exists = prev.some((t) => t.id === taskId);
+        if (!exists) return prev;
+        const next = prev.map((t) => (t.id === taskId ? { ...t, ...updated } : t));
+        boardRef.current = next;
+        return next;
+      });
+      refetch(false);
+    };
+
+    const onTaskMoved = ({ taskId }) => {
+      if (activeTaskRef.current?.id === taskId) return;
+      refetch(false);
+    };
+
+    const onTaskDeleted = ({ taskId }) => {
+      if (selectedId === taskId) setSelectedId(null);
+      if (deleteTarget?.id === taskId) setDeleteTarget(null);
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const next = prev.filter((t) => t.id !== taskId);
+        boardRef.current = next;
+        return next;
+      });
+      refetch(false);
+    };
+
+    const onTaskCommented = ({ taskId, task: commented }) => {
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const exists = prev.some((t) => t.id === taskId);
+        if (!exists) return prev;
+        const next = prev.map((t) =>
+          t.id === taskId ? { ...t, comments: commented.comments } : t
+        );
+        boardRef.current = next;
+        return next;
+      });
+      refetch(false);
+    };
+
+    socket.on("task:created", onTaskCreated);
+    socket.on("task:updated", onTaskUpdated);
+    socket.on("task:moved", onTaskMoved);
+    socket.on("task:deleted", onTaskDeleted);
+    socket.on("task:commented", onTaskCommented);
+
+    return () => {
+      socket.off("task:created", onTaskCreated);
+      socket.off("task:updated", onTaskUpdated);
+      socket.off("task:moved", onTaskMoved);
+      socket.off("task:deleted", onTaskDeleted);
+      socket.off("task:commented", onTaskCommented);
+    };
+  }, [socket, filters.projectId, refetch, selectedId, deleteTarget]);
 
   // ---------- projects (filter dropdown + create form) ----------
   const loadProjects = useCallback(async () => {

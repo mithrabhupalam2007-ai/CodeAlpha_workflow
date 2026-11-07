@@ -37,7 +37,7 @@ export function useTasks(params) {
     refetch();
   }, [refetch]);
 
-  return { tasks, loading, error, refetch };
+  return { tasks, setTasks, loading, error, refetch };
 }
 
 export default useTasks;

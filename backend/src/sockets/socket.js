@@ -115,13 +115,28 @@ const initSocket = (httpServer) => {
     });
 
     /**
-     * Join a project room: `socket.emit("room:join", projectId, ack)`.
+     * Join project room(s): `socket.emit("room:join", projectId | projectIds, ack)`.
      * Membership is verified against MongoDB on every join — non-members
      * are refused and rooms are the only path to domain events.
      */
-    socket.on("room:join", async (projectId, callback) => {
+    socket.on("room:join", async (payload, callback) => {
       const ack = typeof callback === "function" ? callback : () => {};
 
+      if (Array.isArray(payload)) {
+        const joined = [];
+        for (const id of payload) {
+          if (mongoose.isValidObjectId(id)) {
+            const role = await resolveProjectRole(user.id, id);
+            if (role) {
+              await socket.join(projectRoom(id));
+              joined.push({ projectId: String(id), role, room: projectRoom(id) });
+            }
+          }
+        }
+        return ack({ ok: true, joined });
+      }
+
+      const projectId = payload;
       if (!mongoose.isValidObjectId(projectId)) {
         return ack({ ok: false, role: null, error: "invalid project id" });
       }
@@ -141,12 +156,15 @@ const initSocket = (httpServer) => {
     });
 
     // Leaving is always allowed (defensive: only this socket leaves).
-    socket.on("room:leave", async (projectId, callback) => {
+    socket.on("room:leave", async (payload, callback) => {
       const ack = typeof callback === "function" ? callback : () => {};
-      if (mongoose.isValidObjectId(projectId)) {
-        await socket.leave(projectRoom(projectId));
+      const ids = Array.isArray(payload) ? payload : [payload];
+      for (const id of ids) {
+        if (mongoose.isValidObjectId(id)) {
+          await socket.leave(projectRoom(id));
+        }
       }
-      return ack({ ok: true, room: projectRoom(projectId) });
+      return ack({ ok: true });
     });
 
     // Latency check

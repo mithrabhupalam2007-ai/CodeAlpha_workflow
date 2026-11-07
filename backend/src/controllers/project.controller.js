@@ -5,6 +5,7 @@ const Task = require("../models/Task");
 const Activity = require("../models/Activity");
 const TaskActivity = require("../models/TaskActivity");
 const Invitation = require("../models/Invitation");
+const events = require("../sockets/events");
 const {
   allProjectMatch,
   getProjectIds,
@@ -302,7 +303,7 @@ const deleteProject = async (req, res, next) => {
       return forbidden(res, "Only the project owner can delete a project.");
     }
 
-    const [tasks, taskActivities, notifications, invitations] = await Promise.all([
+    const [tasks, taskActivities, activities, invitations] = await Promise.all([
       Task.deleteMany({ project: project._id }),
       TaskActivity.deleteMany({ project: project._id }),
       Activity.deleteMany({ project: project._id }),
@@ -361,6 +362,15 @@ const updateMemberRole = async (req, res, next) => {
       { $set: { "members.$.role": role } }
     );
 
+    events.projectMembers(project._id, "role-changed", targetId, req.user.id);
+    events.notifyUser(targetId, {
+      actorId: req.user.id,
+      actorName: req.user.name,
+      type: "project.updated",
+      message: `changed your role in “${project.name}” to ${role}`,
+      projectId: project._id,
+    });
+
     return res.json({
       success: true,
       message: `Role updated to ${role}.`,
@@ -413,6 +423,16 @@ const removeMember = async (req, res, next) => {
       { _id: project._id },
       { $pull: { members: { user: targetId } } }
     );
+
+    events.kickUserFromProject(targetId, project._id);
+    events.projectMembers(project._id, "removed", targetId, req.user.id);
+    events.notifyUser(targetId, {
+      actorId: req.user.id,
+      actorName: req.user.name,
+      type: "member.removed",
+      message: `removed you from “${project.name}”`,
+      projectId: project._id,
+    });
 
     return res.json({
       success: true,
