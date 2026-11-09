@@ -20,7 +20,7 @@ const SORTS = [
 ];
 
 const SELECT_CLASS =
-  "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-all hover:border-brand-200 focus:border-brand-300 focus:outline-none focus:ring-4 focus:ring-brand-500/10";
+  "workflow-input";
 
 const selectStyle = { backgroundImage: "none" };
 
@@ -57,7 +57,7 @@ export default function TaskFilters({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search tasks…"
             aria-label="Search tasks"
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 transition-all focus:border-brand-300 focus:outline-none focus:ring-4 focus:ring-brand-500/10"
+            className="workflow-input"
           />
         </div>
 
@@ -111,7 +111,7 @@ export default function TaskFilters({
               title={
                 filters.order === "desc" ? "Descending" : "Ascending"
               }
-              className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition-all hover:border-brand-200 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20"
+              className="workflow-input"
             >
               {filters.order === "desc" ? (
                 <ArrowDown className="h-4 w-4" />

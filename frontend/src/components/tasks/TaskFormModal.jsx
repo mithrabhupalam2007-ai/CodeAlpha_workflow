@@ -147,6 +147,7 @@ export default function TaskFormModal({ open, task, projects, onClose, onSaved, 
     try {
       let saved;
       if (isEdit) {
+        // Update task fields
         saved = await updateTask(task.id, payload).then((d) => d.task);
         // Status lives behind its own endpoint
         if (form.status !== task.status) {
@@ -162,6 +163,7 @@ export default function TaskFormModal({ open, task, projects, onClose, onSaved, 
       onSaved?.(saved);
       onClose();
     } catch (error) {
+      console.error("Save task error:", error);
       setServerError(
         error.response?.data?.message ||
           error.response?.data?.errors?.[0]?.msg ||

@@ -60,130 +60,73 @@ export default function BoardCard({ task, isOverlay = false, disabled = false, o
         if (event.key === "Enter") onClick?.();
       }}
       className={cn(
-        "group relative rounded-panel border bg-surface p-3.5 text-left shadow-soft transition-all",
+        "group relative rounded-panel border bg-surface p-4 text-left shadow-soft transition-all",
         disabled && !isOverlay
           ? "cursor-default"
-          : "cursor-grab hover:-translate-y-0.5 hover:border-brand-200",
-        "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/10",
+          : "cursor-grab hover:border-brand-500",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500",
         isDragging || isOverlay
-          ? "border-brand-300 shadow-elevated ring-4 ring-brand-500/10"
-          : "border-slate-200/70",
+          ? "border-brand-500 shadow-glow"
+          : "border-border",
         isDragging && "opacity-40"
       )}
     >
       {/* Drag handle affordance */}
-      <GripVertical className="pointer-events-none absolute left-1 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-slate-200 transition-colors group-hover:text-slate-300 lg:block" />
+      <GripVertical className="pointer-events-none absolute left-1 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-border transition-colors group-hover:text-brand-500 lg:block" />
 
       {/* Title */}
-      <div className="mb-2 pl-2">
+      <div className="mb-2 pl-4">
         <h3
           className={cn(
-            "line-clamp-2 text-sm font-semibold leading-5",
-            isDone ? "text-slate-400 line-through" : "text-slate-800"
+            "text-sm font-semibold leading-5 text-text-main",
+            isDone && "text-text-secondary line-through"
           )}
         >
           {task.title}
         </h3>
+        {task.description && (
+          <p className="mt-1 line-clamp-1 text-xs text-text-secondary">
+            {task.description}
+          </p>
+        )}
       </div>
 
-      {/* Labels */}
-      {(task.labels || []).length > 0 ? (
-        <div className="mb-2 flex flex-wrap items-center gap-1 pl-2">
-          {task.labels.slice(0, 3).map((label) => (
-            <span
-              key={label}
-              className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-600"
-            >
-              {label}
-            </span>
-          ))}
-          {task.labels.length > 3 ? (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-              +{task.labels.length - 3}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
       {/* Meta row */}
-      <div className="flex flex-wrap items-center gap-1.5 pl-2 text-[11px] font-medium text-slate-500">
+      <div className="flex flex-wrap items-center gap-2 pl-4 text-[11px] font-medium text-text-secondary">
         <span
           className={cn(
-            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            priority.className
+            "rounded-full px-2 py-0.5 font-semibold",
+            priority.className.replace(/bg-slate-100/g, "bg-border")
           )}
         >
           {priority.label}
         </span>
 
-        {due ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold",
-              DUE_TONES[due.tone]
-            )}
-          >
+        {due && (
+          <span className="inline-flex items-center gap-1">
             <CalendarClock className="h-3 w-3" />
             {due.text}
           </span>
-        ) : null}
+        )}
 
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            status.className
-          )}
-        >
+        <span className="rounded-full bg-border px-2 py-0.5 text-[10px] font-semibold text-text-secondary">
           {status.label}
         </span>
-
-        {subs.total > 0 ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-1",
-              subs.completed === subs.total && "text-emerald-600"
-            )}
-            title={`${subs.completed} of ${subs.total} subtasks complete`}
-          >
-            <ListChecks className="h-3.5 w-3.5" />
-            {subs.completed}/{subs.total}
-          </span>
-        ) : null}
-
-        {attachmentCount > 0 ? (
-          <span
-            className="inline-flex items-center gap-1"
-            title={`${attachmentCount} attachment(s)`}
-          >
-            <Link2 className="h-3.5 w-3.5" />
-            {attachmentCount}
-          </span>
-        ) : null}
-
-        {commentCount > 0 ? (
-          <span
-            className="inline-flex items-center gap-1"
-            title={`${commentCount} comment(s)`}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            {commentCount}
-          </span>
-        ) : null}
       </div>
 
       {/* Assignee */}
-      <div className="mt-2.5 flex items-center justify-between pl-2">
+      <div className="mt-3 flex items-center justify-between pl-4">
         {task.assignee ? (
           <span
             title={`Assigned to ${task.assignee.name}`}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-[9px] font-bold text-white ring-2 ring-white"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white"
           >
             {initialsOf(task.assignee.name)}
           </span>
         ) : (
           <span
             title="Unassigned"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-slate-300 text-slate-400"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border text-text-secondary"
           >
             <UserRound className="h-3 w-3" />
           </span>

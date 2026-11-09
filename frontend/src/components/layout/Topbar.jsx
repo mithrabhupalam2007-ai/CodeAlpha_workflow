@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { HelpCircle, Menu, Search } from "lucide-react";
 
 import ApiStatus from "../ui/ApiStatus.jsx";
@@ -19,6 +19,19 @@ const TITLES = {
  */
 export default function Topbar({ onMenuClick }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const query = e.target.elements.search.value.trim();
+    if (query) {
+      navigate(`/tasks?q=${encodeURIComponent(query)}`);
+    } else {
+      navigate("/tasks");
+    }
+  };
+
   const isProjectDetail = pathname.startsWith("/projects/");
   const { title, subtitle } = isProjectDetail
     ? { title: "Project", subtitle: "Overview, members & invitations" }
@@ -52,16 +65,18 @@ export default function Topbar({ onMenuClick }) {
           ) : null}
         </div>
 
-        {/* Search (non-functional until the search feature lands) */}
-        <div className="relative hidden md:block">
+        {/* Search */}
+        <form onSubmit={handleSearch} className="relative hidden md:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
-            placeholder="Search projects, tasks…"
-            aria-label="Search projects and tasks"
+            name="search"
+            defaultValue={searchParams.get("q") || ""}
+            placeholder="Search tasks…"
+            aria-label="Search tasks"
             className="w-64 rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 transition-all focus:w-72 focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10 lg:w-72 lg:focus:w-80"
           />
-        </div>
+        </form>
 
         {/* Live API status */}
         <ApiStatus />

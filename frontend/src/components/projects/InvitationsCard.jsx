@@ -122,7 +122,7 @@ export default function InvitationsCard({ project, onChanged }) {
               }}
               placeholder="teammate@company.com"
               aria-label="Email address to invite"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 transition-all focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10"
+              className="workflow-input"
             />
           </div>
 
@@ -130,7 +130,7 @@ export default function InvitationsCard({ project, onChanged }) {
             value={role}
             onChange={(event) => setRole(event.target.value)}
             aria-label="Role to grant"
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 transition-all focus:border-brand-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand-500/10"
+            className="workflow-input"
           >
             {ASSIGNABLE_ROLES.map((value) => (
               <option key={value} value={value}>

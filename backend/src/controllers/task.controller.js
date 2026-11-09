@@ -472,10 +472,19 @@ const updateTask = async (req, res, next) => {
     const loaded = await loadTaskForMember(userId, req.params.id);
     if (!loaded) return notFound(res);
 
-    const { task, role } = loaded;
+    const { project, role } = loaded;
     if (!canEditTasks(role)) {
       return forbidden(res, "Viewers can’t edit tasks.");
     }
+
+    // Permission check: Editors can only edit their own assigned tasks.
+    const isOwnerOrAdmin = role === "owner" || role === "admin";
+    const isAssigned = task.assignee && String(idOf(task.assignee)) === String(userId);
+
+    if (!isOwnerOrAdmin && !isAssigned) {
+      return forbidden(res, "You can only edit your own assigned tasks.");
+    }
+
     if (task.project.status === "archived") {
       return conflict(res, "This project is archived. Restore it before editing tasks.");
     }
@@ -569,9 +578,14 @@ const updateTaskStatus = async (req, res, next) => {
     if (!loaded) return notFound(res);
 
     const { task, role } = loaded;
-    if (!canUpdateTaskProgress(role, task, userId)) {
-      return forbidden(res, "You can’t change the status of this task.");
+    // Permission check: Owner/Admin or the assigned member can update status
+    const isOwnerOrAdmin = role === "owner" || role === "admin";
+    const isAssigned = task.assignee && String(idOf(task.assignee)) === String(userId);
+
+    if (!isOwnerOrAdmin && !isAssigned) {
+      return forbidden(res, "You can only update the status of your own assigned tasks.");
     }
+
     if (task.project.status === "archived") {
       return conflict(res, "This project is archived. Restore it before updating tasks.");
     }
@@ -634,8 +648,12 @@ const moveTask = async (req, res, next) => {
     if (!loaded) return notFound(res);
 
     const { task, role } = loaded;
-    if (!canUpdateTaskProgress(role, task, userId)) {
-      return forbidden(res, "You can’t move this task.");
+    // Permission check: Owner/Admin or the assigned member can move tasks
+    const isOwnerOrAdmin = role === "owner" || role === "admin";
+    const isAssigned = task.assignee && String(idOf(task.assignee)) === String(userId);
+
+    if (!isOwnerOrAdmin && !isAssigned) {
+      return forbidden(res, "You can only move your own assigned tasks.");
     }
     if (task.project.status === "archived") {
       return conflict(res, "This project is archived. Restore it before moving tasks.");
@@ -741,7 +759,11 @@ const addSubtask = async (req, res, next) => {
     if (!loaded) return notFound(res);
 
     const { task, role } = loaded;
-    if (!canUpdateTaskProgress(role, task, userId)) {
+    // Permission check: Owner/Admin or the assigned member can add subtasks
+    const isOwnerOrAdmin = role === "owner" || role === "admin";
+    const isAssigned = task.assignee && String(idOf(task.assignee)) === String(userId);
+
+    if (!isOwnerOrAdmin && !isAssigned) {
       return forbidden(res, "You can’t modify this task’s subtasks.");
     }
     if (task.project.status === "archived") {
@@ -771,7 +793,11 @@ const updateSubtask = async (req, res, next) => {
     if (!loaded) return notFound(res);
 
     const { task, role } = loaded;
-    if (!canUpdateTaskProgress(role, task, userId)) {
+    // Permission check: Owner/Admin or the assigned member can add subtasks
+    const isOwnerOrAdmin = role === "owner" || role === "admin";
+    const isAssigned = task.assignee && String(idOf(task.assignee)) === String(userId);
+
+    if (!isOwnerOrAdmin && !isAssigned) {
       return forbidden(res, "You can’t modify this task’s subtasks.");
     }
     if (task.project.status === "archived") {
@@ -807,7 +833,11 @@ const removeSubtask = async (req, res, next) => {
     if (!loaded) return notFound(res);
 
     const { task, role } = loaded;
-    if (!canUpdateTaskProgress(role, task, userId)) {
+    // Permission check: Owner/Admin or the assigned member can add subtasks
+    const isOwnerOrAdmin = role === "owner" || role === "admin";
+    const isAssigned = task.assignee && String(idOf(task.assignee)) === String(userId);
+
+    if (!isOwnerOrAdmin && !isAssigned) {
       return forbidden(res, "You can’t modify this task’s subtasks.");
     }
     if (task.project.status === "archived") {

@@ -149,6 +149,7 @@ const notifyUser = async (userId, fields) => {
       message,
       project: projectId,
       task: taskId,
+      read: false,
     });
 
     // Shape mirrors GET /api/dashboard/activity entries so the bell can
@@ -159,6 +160,7 @@ const notifyUser = async (userId, fields) => {
       message: entry.message,
       actor: { id: actorId, name: fields.actorName ?? null },
       projectId: projectId ? String(projectId) : null,
+      read: false,
       createdAt: entry.createdAt,
     });
   } catch (error) {

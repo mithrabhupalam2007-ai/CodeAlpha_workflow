@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShieldCheck, Trash2, UserRound, Circle } from "lucide-react";
 
 import Card from "../ui/Card.jsx";
 import Button from "../ui/Button.jsx";
@@ -16,10 +16,11 @@ import {
 } from "../../utils/permissions.js";
 import { initialsOf } from "../../utils/dates.js";
 import { cn } from "../../utils/cn.js";
+import { useSocket } from "../../context/SocketContext.jsx";
 
 /**
  * Project members: list with avatars, role badges, owner-only role select,
- * and permission-aware remove buttons.
+ * and permission-aware remove buttons. Real-time online status.
  */
 export default function MembersCard({ project, currentUserId, onChanged }) {
   const myRole = project.myRole;
@@ -27,9 +28,31 @@ export default function MembersCard({ project, currentUserId, onChanged }) {
   const [error, setError] = useState(null);
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [removing, setRemoving] = useState(false);
+  const { socket } = useSocket();
 
-  const isOwner = canManageSettings(myRole);
-  const mayManage = canManageMembers(myRole);
+  // Local state for online status, initialized from server-provided member data
+  const [memberStatuses, setMemberStatuses] = useState(() => {
+    const initial = {};
+    project.members.forEach((m) => {
+      // Assuming members have isOnline/lastActiveAt from API
+      initial[m.id] = { isOnline: m.isOnline ?? false, lastActiveAt: m.lastActiveAt };
+    });
+    return initial;
+  });
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onPresence = ({ userId, isOnline }) => {
+      setMemberStatuses((prev) => ({
+        ...prev,
+        [userId]: { ...prev[userId], isOnline, lastActiveAt: new Date() },
+      }));
+    };
+
+    socket.on("user:presence", onPresence);
+    return () => socket.off("user:presence", onPresence);
+  }, [socket]);
 
   const handleRoleChange = async (member, role) => {
     setError(null);
@@ -59,6 +82,9 @@ export default function MembersCard({ project, currentUserId, onChanged }) {
       setRemoving(false);
     }
   };
+
+  const isOwner = canManageSettings(myRole);
+  const mayManage = canManageMembers(myRole);
 
   return (
     <Card
@@ -95,9 +121,16 @@ export default function MembersCard({ project, currentUserId, onChanged }) {
               key={member.id}
               className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-xs font-bold text-white">
-                {initialsOf(member.name || member.email)}
-              </span>
+              <div className="relative">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-xs font-bold text-white">
+                  {initialsOf(member.name || member.email)}
+                </span>
+                {memberStatuses[member.id]?.isOnline && (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full border-2 border-white bg-emerald-500">
+                    <Circle className="h-1.5 w-1.5 fill-white text-white" />
+                  </span>
+                )}
+              </div>
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-slate-800">

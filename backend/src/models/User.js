@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema(
       enum: ["member", "admin"],
       default: "member",
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: Date.now,
+    },
     // Bumped on password reset so every existing session/refresh token dies.
     tokenVersion: {
       type: Number,

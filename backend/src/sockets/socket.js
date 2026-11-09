@@ -103,6 +103,10 @@ const initSocket = (httpServer) => {
   io.on("connection", (socket) => {
     const user = socket.data.user;
 
+    // Update user status to online
+    User.findByIdAndUpdate(user.id, { isOnline: true, lastActiveAt: new Date() }).catch(console.error);
+    io.emit("user:presence", { userId: user.id, isOnline: true });
+
     // Private notification room — server-managed, survives reconnects.
     socket.join(userRoom(user.id));
 
@@ -174,8 +178,10 @@ const initSocket = (httpServer) => {
       else socket.emit("server:pong", payload);
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.on("disconnect", async (reason) => {
       console.log(`Socket disconnected: ${user.id} ${user.name ?? ""} (${reason})`);
+      await User.findByIdAndUpdate(user.id, { isOnline: false, lastActiveAt: new Date() });
+      io.emit("user:presence", { userId: user.id, isOnline: false });
     });
   });
 

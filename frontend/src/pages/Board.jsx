@@ -475,15 +475,15 @@ export default function Board() {
   const showBoard = board && (list.length > 0 || filtersActive) && !error;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Board</h2>
-          <p className="mt-1 text-sm text-slate-500">
+          <h2 className="text-2xl font-bold tracking-tight text-text-main">Board</h2>
+          <p className="mt-1 text-sm text-text-secondary">
             {loading && tasks === null
               ? "Loading board…"
-              : `${list.length} task${list.length === 1 ? "" : "s"} across four stages — drag cards to update them`}
+              : `${list.length} task${list.length === 1 ? "" : "s"} across all stages`}
           </p>
         </div>
         <Button onClick={() => openCreate("todo")} disabled={!hasProjects}>
@@ -539,12 +539,12 @@ export default function Board() {
       {/* Load error */}
       {error && !loading ? (
         <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="max-w-md rounded-panel border border-slate-200/70 bg-surface p-8 text-center shadow-soft">
-            <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-500">
+          <div className="max-w-md rounded-panel border border-border bg-surface p-8 text-center shadow-card">
+            <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-950/20 text-rose-500">
               <CircleAlert className="h-6 w-6" />
             </span>
-            <h3 className="text-lg font-bold text-slate-900">Couldn’t load the board</h3>
-            <p className="mt-2 text-sm text-slate-500">
+            <h3 className="text-lg font-bold text-text-main">Couldn’t load the board</h3>
+            <p className="mt-2 text-sm text-text-secondary">
               {error?.response?.data?.message ||
                 "Check that the API is running and try again."}
             </p>
@@ -556,91 +556,38 @@ export default function Board() {
         </div>
       ) : null}
 
-      {/* Empty */}
-      {tasks && list.length === 0 && !error ? (
-        <EmptyState
-          icon={filtersActive ? Search : KanbanSquare}
-          title={filtersActive ? "No tasks match" : "Your board is empty"}
-          description={
-            filtersActive
-              ? "Try a different search term or clear the filters."
-              : "Create your first task — or add one straight into a column — to get started."
-          }
-          action={
-            filtersActive ? (
-              <Button variant="ghost" onClick={clearFilters}>
-                Clear search & filters
-              </Button>
-            ) : (
-              <Button onClick={() => openCreate("todo")} disabled={!hasProjects}>
-                <Plus className="h-4 w-4" />
-                New Task
-              </Button>
-            )
-          }
-          className="py-16"
-        />
-      ) : null}
-
-      {/* Columns skeleton */}
-      {loading && tasks === null && !error ? (
-        <div className="flex gap-4">
-          {COLUMNS.map((col) => (
-            <div
-              key={col}
-              className="w-72 shrink-0 space-y-3 rounded-panel border border-slate-200/70 bg-slate-50/80 p-3 sm:w-[19rem]"
-            >
-              <Skeleton className="h-6 w-28" />
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-panel" />
-              ))}
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      {/* The board */}
+      {/* The board — Vertical Lists */}
       {showBoard ? (
-        <>
-          {lockDrag ? (
-            <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-              <Lock className="h-3.5 w-3.5" />
-              Dragging is paused while filters hide cards — clear filters to reorder.
-            </p>
-          ) : null}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-4">
+            {COLUMNS.map((status) => (
+              <BoardColumn
+                key={status}
+                status={status}
+                tasks={columns[status]}
+                authUserId={user?.id}
+                lockDrag={lockDrag}
+                onCreate={openCreate}
+                onOpenTask={handleCardClick}
+              />
+            ))}
+          </div>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-          >
-            <div className="scrollbar-thin flex gap-4 overflow-x-auto pb-4 xl:overflow-visible">
-              {COLUMNS.map((status) => (
-                <BoardColumn
-                  key={status}
-                  status={status}
-                  tasks={columns[status]}
-                  authUserId={user?.id}
-                  lockDrag={lockDrag}
-                  onCreate={openCreate}
-                  onOpenTask={handleCardClick}
-                  filtersActive={filtersActive}
-                />
-              ))}
-            </div>
-
-            <DragOverlay dropAnimation={null}>
-              {activeTask ? (
-                <div className="w-72 rotate-1 sm:w-[18rem]">
-                  <BoardCard task={activeTask} isOverlay />
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </>
+          <DragOverlay dropAnimation={null}>
+            {activeTask ? (
+              <div className="w-72 rotate-1 shadow-glow sm:w-[18rem]">
+                <BoardCard task={activeTask} isOverlay />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       ) : null}
 
       {/* Create / edit dialog */}

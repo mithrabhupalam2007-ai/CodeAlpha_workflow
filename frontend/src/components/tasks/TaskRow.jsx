@@ -32,7 +32,10 @@ export default function TaskRow({
   onDelete,
 }) {
   const canEdit = canEditTasks(task.myRole);
+  const isAssigned = task.assignee && task.assignee.id === user?.id;
   const canProgress = canUpdateTaskProgress(task.myRole, task, user?.id);
+  const showEdit = canEdit;
+  const showProgress = canProgress;
 
   const priority = TASK_PRIORITY[task.priority] ?? TASK_PRIORITY.medium;
   const status = TASK_STATUS[task.status] ?? TASK_STATUS.todo;
@@ -218,7 +221,7 @@ export default function TaskRow({
             </span>
           )}
 
-          {canEdit ? (
+          {showEdit ? (
             <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
               <button
                 type="button"

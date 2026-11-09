@@ -39,7 +39,7 @@ const getProjectRole = (project, userId) => {
 };
 
 const canManageSettings = (role) => role === "owner";
-const canManageMembers = (role) => rank(role) >= rank("admin");
+const canManageMembers = (role) => role === "owner";
 const canEditProject = (role) => rank(role) >= rank("editor");
 
 /** An admin may remove/edit editors & viewers but never admins or the owner. */

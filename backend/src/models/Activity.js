@@ -55,6 +55,11 @@ const notificationSchema = new mongoose.Schema(
       maxlength: 300,
       default: "",
     },
+    read: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   {
     timestamps: { createdAt: true, updatedAt: false },

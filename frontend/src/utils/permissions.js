@@ -38,7 +38,7 @@ export const ASSIGNABLE_ROLES = ["admin", "editor", "viewer"];
 const rank = (role) => ROLE_RANK[role] || 0;
 
 export const canManageSettings = (role) => role === "owner";
-export const canManageMembers = (role) => rank(role) >= rank("admin");
+export const canManageMembers = (role) => role === "owner";
 
 /** Owner: anyone but themselves. Admin: editors & viewers only. */
 export const canActOnMember = (requesterRole, targetRole) => {
